@@ -1,0 +1,394 @@
+{
+  "info": {
+    "name": "Multi-Org Task API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Register (Create Org)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const ts = Date.now();",
+              "if (!pm.environment.get('email_admin')) { pm.environment.set('email_admin', `admin+${ts}@example.com`); }",
+              "if (!pm.environment.get('password')) { pm.environment.set('password', 'Password123!'); }",
+              "if (!pm.environment.get('name_admin')) { pm.environment.set('name_admin', 'Alice Admin'); }",
+              "if (!pm.environment.get('org_name')) { pm.environment.set('org_name', `Org-${ts}`); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const res = pm.response.json();",
+              "  if (res && res.access_token) {",
+              "    pm.environment.set('token_admin', res.access_token);",
+              "    pm.environment.set('token', res.access_token);",
+              "    try {",
+              "      const payload = JSON.parse(atob(res.access_token.split('.')[1]));",
+              "      if (payload.sub) pm.environment.set('userId_admin', payload.sub);",
+              "      if (payload.orgId) pm.environment.set('orgId_admin', payload.orgId);",
+              "    } catch (e) {}",
+              "  }",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "register"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"mode\": \"create\",\n  \"name\": \"{{name_admin}}\",\n  \"email\": \"{{email_admin}}\",\n  \"password\": \"{{password}}\",\n  \"orgName\": \"{{org_name}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Login (Admin)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.variables.set('login_email', pm.environment.get('email_admin') || 'alice@example.com');",
+              "pm.variables.set('login_password', pm.environment.get('password') || 'Password123!');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const res = pm.response.json();",
+              "  if (res && res.access_token) {",
+              "    pm.environment.set('token_admin', res.access_token);",
+              "    pm.environment.set('token', res.access_token);",
+              "    try {",
+              "      const payload = JSON.parse(atob(res.access_token.split('.')[1]));",
+              "      if (payload.sub) pm.environment.set('userId_admin', payload.sub);",
+              "      if (payload.orgId) pm.environment.set('orgId_admin', payload.orgId);",
+              "    } catch (e) {}",
+              "  }",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{login_email}}\",\n  \"password\": \"{{login_password}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Org - Get (Admin)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const t = pm.environment.get('token_admin'); if (t) pm.environment.set('token', t);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const org = pm.response.json();",
+              "  if (org && org.joinCode) pm.environment.set('joinCode', org.joinCode);",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{base_url}}/org", "host": ["{{base_url}}"], "path": ["org"] }
+      }
+    },
+    {
+      "name": "Auth - Register (Join Org)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const ts = Date.now();",
+              "if (!pm.environment.get('email_user')) { pm.environment.set('email_user', `user+${ts}@example.com`); }",
+              "if (!pm.environment.get('name_user')) { pm.environment.set('name_user', 'Bob User'); }",
+              "if (!pm.environment.get('password')) { pm.environment.set('password', 'Password123!'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const res = pm.response.json();",
+              "  if (res && res.access_token) {",
+              "    pm.environment.set('token_user', res.access_token);",
+              "    pm.environment.set('token', res.access_token);",
+              "    try {",
+              "      const payload = JSON.parse(atob(res.access_token.split('.')[1]));",
+              "      if (payload.sub) { pm.environment.set('userId_user', payload.sub); pm.environment.set('userId', payload.sub); }",
+              "      if (payload.orgId) pm.environment.set('orgId_user', payload.orgId);",
+              "    } catch (e) {}",
+              "  }",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "register"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"mode\": \"join\",\n  \"name\": \"{{name_user}}\",\n  \"email\": \"{{email_user}}\",\n  \"password\": \"{{password}}\",\n  \"joinCode\": \"{{joinCode}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Me",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const u = pm.response.json();",
+              "  if (u && u.id) pm.environment.set('userId', u.id);",
+              "  if (u && u.orgId) pm.environment.set('orgId', u.orgId);",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"] }
+      }
+    },
+    {
+      "name": "Tasks - List",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{base_url}}/tasks", "host": ["{{base_url}}"], "path": ["tasks"] }
+      }
+    },
+    {
+      "name": "Tasks - Create",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const tu = pm.environment.get('token_user') || pm.environment.get('token'); if (tu) pm.environment.set('token', tu);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const t = pm.response.json();",
+              "  if (t && t.id) pm.environment.set('taskId', t.id);",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/tasks", "host": ["{{base_url}}"], "path": ["tasks"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"First Task\",\n  \"description\": \"Do something important\",\n  \"priority\": \"MEDIUM\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Tasks - Get by ID",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/tasks/{{taskId}}",
+          "host": ["{{base_url}}"],
+          "path": ["tasks", "{{taskId}}"]
+        }
+      }
+    },
+    {
+      "name": "Tasks - Update",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/tasks/{{taskId}}",
+          "host": ["{{base_url}}"],
+          "path": ["tasks", "{{taskId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Tasks - Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/tasks/{{taskId}}",
+          "host": ["{{base_url}}"],
+          "path": ["tasks", "{{taskId}}"]
+        }
+      }
+    },
+    {
+      "name": "Org - List Users (Admin)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const t = pm.environment.get('token_admin'); if (t) pm.environment.set('token', t);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const list = pm.response.json();",
+              "  if (Array.isArray(list)) {",
+              "    const u = list.find(x => x.role === 'USER') || list[0];",
+              "    if (u && u.id) pm.environment.set('userId', u.id);",
+              "  }",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/org/users",
+          "host": ["{{base_url}}"],
+          "path": ["org", "users"]
+        }
+      }
+    },
+    {
+      "name": "Org - Update (Admin)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const t = pm.environment.get('token_admin'); if (t) pm.environment.set('token', t);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/org", "host": ["{{base_url}}"], "path": ["org"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Acme Corp\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Org - Set Role (Admin)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const t = pm.environment.get('token_admin'); if (t) pm.environment.set('token', t);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/org/users/{{userId}}/role",
+          "host": ["{{base_url}}"],
+          "path": ["org", "users", "{{userId}}", "role"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"role\": \"USER\"\n}"
+        }
+      }
+    }
+  ]
+}
